@@ -1,5 +1,4 @@
-import java.io.FileNotFoundException;
-import java.io.PrintWriter;
+import java.io.*;
 import java.util.*;
 
 public class Main {
@@ -75,7 +74,19 @@ public class Main {
                         }
                         break;
                     case 6:
-
+                        cambiarPrecio();
+                        break;
+                    case 7:
+                        cargarProductosDesdeArchivo();
+                        break;
+                    case 8:
+                        imprimirProductosOrdenadosPorPrecio();
+                        break;
+                    case 9:
+                        listarProductosPorNombre(true);
+                        break;
+                    case 10:
+                        filtrarProductosPorPrecio(2.0,5.0);
                         break;
                     default:
                         System.out.println("Elige una opción válida");
@@ -186,6 +197,11 @@ public class Main {
         System.out.println("3.Añadir Producto");
         System.out.println("4.Imprimir Productos");
         System.out.println("5.Eliminar Producto");
+        System.out.println("6.Cambiar el precio a un Producto");
+        System.out.println("7.Cargar Productos desde archivo");
+        System.out.println("8.Ordenar Productos por Precio (Mayor a Menor)");
+        System.out.println("9.Ordenar Productos por Nombre (A-Z=true Z-A=false)");
+        System.out.println("10.Filtrar productos por Precio");
 
     }
     public static void generarTicket(Map<String, Super> compraMap) {
@@ -218,7 +234,7 @@ public class Main {
         }
     }
 
-    
+
     public static void nuevoProducto(){
         Scanner sc = new Scanner(System.in);
 
@@ -246,6 +262,120 @@ public class Main {
             }
         }
         return null;
+    }
+
+    public static void cambiarPrecio() {
+        Scanner sc = new Scanner(System.in);
+
+        System.out.print("Introduce el nombre del producto cuyo precio quieres cambiar: ");
+        String nombreProducto = sc.nextLine();
+        boolean encontrado = false;
+
+        for (Super s : Productos) {
+            if (s.nombre.equalsIgnoreCase(nombreProducto)) {
+                System.out.print("Introduce el nuevo precio: ");
+                try {
+                    double nuevoPrecio = sc.nextDouble();
+                    sc.nextLine();
+
+                    if (nuevoPrecio < 0) {
+                        System.out.println("El precio no puede ser negativo.");
+                        return;
+                    }
+
+                    s.precio = nuevoPrecio;
+                    System.out.println("Precio actualizado correctamente.");
+                    encontrado = true;
+                } catch (InputMismatchException e) {
+                    System.out.println("Entrada inválida. Debes introducir un número.");
+                    encontrado=true;
+                    sc.nextLine();
+                }
+                break;
+            }
+        }
+
+        if (!encontrado) {
+            System.out.println("Producto no encontrado.");
+        }
+    }
+
+    public static void cargarProductosDesdeArchivo() {
+        try (BufferedReader reader = new BufferedReader(new FileReader("ticket2.txt"))) {
+            String linea;
+            while ((linea = reader.readLine()) != null) {
+                String[] partes = linea.split(",");
+                if (partes.length == 2) {
+                    String nombre = partes[0].trim();
+                    double precio;
+
+                    try {
+                        precio = Double.parseDouble(partes[1].trim().replace(',', '.'));
+                    } catch (NumberFormatException e) {
+                        System.out.println("Precio inválido en la línea: " + linea);
+                        continue;
+                    }
+
+                    Super productoF = new Super(nombre, 0, precio);
+                    Productos.add(productoF);
+                    pros.put(nombre.toLowerCase(), precio);
+                } else {
+                    System.out.println("Línea mal formada: " + linea);
+                }
+            }
+            System.out.println("Productos cargados correctamente desde el archivo.");
+        } catch (IOException e) {
+            System.out.println("Error al leer el archivo: " + e.getMessage());
+        }
+    }
+
+    public static void imprimirProductosOrdenadosPorPrecio() {
+
+        List<Super> productosOrdenados = new ArrayList<>(Productos);
+
+        productosOrdenados.sort((p1, p2) -> Double.compare(p2.precio, p1.precio));
+
+        System.out.printf("%-10s %10s\n", "Producto", "Precio");
+
+
+        for (Super producto : productosOrdenados) {
+            String precioStr = String.format("%.2f", producto.precio).replace('.', ',');
+            System.out.printf("%-10s %10s\n", producto.nombre, precioStr);
+        }
+    }
+
+    public static void listarProductosPorNombre(boolean ascendente) {
+        List<Super> lista = new ArrayList<>(Productos);
+
+        if (ascendente) {
+            lista.sort(Comparator.comparing(s -> s.nombre.toLowerCase()));
+        } else {
+            lista.sort(Comparator.comparing((Super s) -> s.nombre.toLowerCase()).reversed());
+        }
+
+        System.out.println("Productos ordenados por nombre (" + (ascendente ? "A–Z" : "Z–A") + "):");
+        for (Super s : lista) {
+            System.out.println(s.nombre + " - Precio: " + String.format("%.2f", s.precio).replace('.', ','));
+        }
+    }
+
+    public static void filtrarProductosPorPrecio(double min, double max) {
+        System.out.println("Productos entre " + min + "€ y " + max + "€:");
+
+        boolean encontrado = false;
+
+        for (Super s : Productos) {
+            double precioUnitario = s.precio / s.cantidad;
+
+            if (precioUnitario >= min && precioUnitario <= max) {
+                System.out.println(s);
+                encontrado = true;
+            }
+        }
+
+        if (!encontrado) {
+            System.out.println("No se encontraron productos en ese rango de precios.");
+        }
     }
 
 
